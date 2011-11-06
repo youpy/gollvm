@@ -6,14 +6,12 @@ package llvm
 */
 import "C"
 import "os"
-import "unsafe"
+//import "unsafe"
 
 var writeBitcodeToFileErr = os.NewError("Failed to write bitcode to file")
 
-func WriteBitcodeToFile(m Module, filename string) os.Error {
-	cfilename := C.CString(filename)
-	result := C.LLVMWriteBitcodeToFile(m.C, cfilename)
-	C.free(unsafe.Pointer(cfilename))
+func WriteBitcodeToFile(m Module, file *os.File) os.Error {
+	result := C.LLVMWriteBitcodeToFD(m.C, C.int(file.Fd()), C.int(0), C.int(0))
 	if result == 0 {
 		return nil
 	}

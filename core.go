@@ -1588,8 +1588,14 @@ func (b Builder) CreatePHI(t Type, name string) (v Value) {
 }
 func (b Builder) CreateCall(fn Value, args []Value, name string) (v Value) {
 	cname := C.CString(name)
+    var arg0 *Value
+    nargs := 0
+    if (args != nil) {
+        arg0 = &args[0]
+        nargs = len(args)
+    }
 	v.C = C.LLVMBuildCall(b.C, fn.C,
-		llvmValueRefPtr(&args[0]), C.unsigned(len(args)), cname)
+		llvmValueRefPtr(arg0), C.unsigned(nargs), cname)
 	C.free(unsafe.Pointer(cname))
 	return
 }
