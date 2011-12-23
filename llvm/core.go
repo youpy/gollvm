@@ -25,9 +25,6 @@ type (
 	Type struct {
 		C C.LLVMTypeRef
 	}
-	TypeHandle struct {
-		C C.LLVMTypeHandleRef
-	}
 	Value struct {
 		C C.LLVMValueRef
 	}
@@ -62,7 +59,6 @@ type (
 func (c Context) IsNil() bool        { return c.C == nil }
 func (c Module) IsNil() bool         { return c.C == nil }
 func (c Type) IsNil() bool           { return c.C == nil }
-func (c TypeHandle) IsNil() bool     { return c.C == nil }
 func (c Value) IsNil() bool          { return c.C == nil }
 func (c BasicBlock) IsNil() bool     { return c.C == nil }
 func (c Builder) IsNil() bool        { return c.C == nil }
@@ -201,7 +197,6 @@ const (
 	StructTypeKind    = C.LLVMStructTypeKind
 	ArrayTypeKind     = C.LLVMArrayTypeKind
 	PointerTypeKind   = C.LLVMPointerTypeKind
-	OpaqueTypeKind    = C.LLVMOpaqueTypeKind
 	VectorTypeKind    = C.LLVMVectorTypeKind
 	MetadataTypeKind  = C.LLVMMetadataTypeKind
 )
@@ -359,18 +354,6 @@ func (m Module) SetTarget(target string) {
 	C.free(unsafe.Pointer(ctarget))
 }
 
-// See Module::addTypeName.
-func (m Module) AddTypeName(name string, ty Type) bool {
-	cname := C.CString(name)
-	result := C.LLVMAddTypeName(m.C, cname, ty.C) != 0
-	C.free(unsafe.Pointer(cname))
-	return result
-}
-func (m Module) DeleteTypeName(name string) {
-	cname := C.CString(name)
-	C.LLVMDeleteTypeName(m.C, cname)
-	C.free(unsafe.Pointer(cname))
-}
 func (m Module) GetTypeByName(name string) (t Type) {
 	cname := C.CString(name)
 	t.C = C.LLVMGetTypeByName(m.C, cname)
@@ -388,6 +371,12 @@ func (m Module) SetInlineAsm(asm string) {
 	casm := C.CString(asm)
 	C.LLVMSetModuleInlineAsm(m.C, casm)
 	C.free(unsafe.Pointer(casm))
+}
+
+func (m Module) AddNamedMetadataOperand(name string, operand Value) {
+    cname := C.CString(name)
+    C.LLVMAddNamedMetadataOperand(m.C, cname, operand.C)
+    C.free(unsafe.Pointer(cname))
 }
 
 //-------------------------------------------------------------------------
@@ -475,24 +464,38 @@ func (t Type) IsFunctionVarArg() bool { return C.LLVMIsFunctionVarArg(t.C) != 0 
 func (t Type) ReturnType() (rt Type)  { rt.C = C.LLVMGetReturnType(t.C); return }
 func (t Type) ParamTypesCount() int   { return int(C.LLVMCountParamTypes(t.C)) }
 func (t Type) ParamTypes() []Type {
-	out := make([]Type, t.ParamTypesCount())
-	C.LLVMGetParamTypes(t.C, llvmTypeRefPtr(&out[0]))
-	return out
+    count := t.ParamTypesCount()
+    if count > 0 {
+    	out := make([]Type, count)
+        C.LLVMGetParamTypes(t.C, llvmTypeRefPtr(&out[0]))
+        return out
+    }
+	return nil
 }
 
 // Operations on struct types
 func (c Context) StructType(elementTypes []Type, packed bool) (t Type) {
+    var pt *C.LLVMTypeRef
+    var ptlen C.unsigned
+    if len(elementTypes) > 0 {
+		pt = llvmTypeRefPtr(&elementTypes[0])
+		ptlen = C.unsigned(len(elementTypes))
+    }
 	t.C = C.LLVMStructTypeInContext(c.C,
-		llvmTypeRefPtr(&elementTypes[0]),
-		C.unsigned(len(elementTypes)),
+        pt,
+        ptlen,
 		boolToLLVMBool(packed))
 	return
 }
 
 func StructType(elementTypes []Type, packed bool) (t Type) {
-	t.C = C.LLVMStructType(llvmTypeRefPtr(&elementTypes[0]),
-		C.unsigned(len(elementTypes)),
-		boolToLLVMBool(packed))
+    var pt *C.LLVMTypeRef
+    var ptlen C.unsigned
+    if len(elementTypes) > 0 {
+		pt = llvmTypeRefPtr(&elementTypes[0])
+		ptlen = C.unsigned(len(elementTypes))
+    }
+	t.C = C.LLVMStructType(pt, ptlen, boolToLLVMBool(packed))
 	return
 }
 
@@ -500,7 +503,9 @@ func (t Type) IsStructPacked() bool         { return C.LLVMIsPackedStruct(t.C) !
 func (t Type) StructElementTypesCount() int { return int(C.LLVMCountStructElementTypes(t.C)) }
 func (t Type) StructElementTypes() []Type {
 	out := make([]Type, t.StructElementTypesCount())
-	C.LLVMGetStructElementTypes(t.C, llvmTypeRefPtr(&out[0]))
+    if len(out) > 0 {
+    	C.LLVMGetStructElementTypes(t.C, llvmTypeRefPtr(&out[0]))
+    }
 	return out
 }
 
@@ -526,20 +531,9 @@ func (t Type) VectorSize() int          { return int(C.LLVMGetVectorSize(t.C)) }
 // Operations on other types
 func (c Context) VoidType() (t Type)   { t.C = C.LLVMVoidTypeInContext(c.C); return }
 func (c Context) LabelType() (t Type)  { t.C = C.LLVMLabelTypeInContext(c.C); return }
-func (c Context) OpaqueType() (t Type) { t.C = C.LLVMOpaqueTypeInContext(c.C); return }
 
 func VoidType() (t Type)   { t.C = C.LLVMVoidType(); return }
 func LabelType() (t Type)  { t.C = C.LLVMLabelType(); return }
-func OpaqueType() (t Type) { t.C = C.LLVMOpaqueType(); return }
-
-// Operations on type handles
-func (t Type) TypeHandle() (th TypeHandle) {
-	th.C = C.LLVMCreateTypeHandle(t.C)
-	return
-}
-func (t Type) Refine(concrete Type) { C.LLVMRefineType(t.C, concrete.C) }
-func (th TypeHandle) Get() (t Type) { t.C = C.LLVMResolveTypeHandle(th.C); return }
-func (th TypeHandle) Dispose()      { C.LLVMDisposeTypeHandle(th.C) }
 
 //-------------------------------------------------------------------------
 // llvm.Value
@@ -689,7 +683,6 @@ func (v Value) IsAInvokeInst() (rv Value)          { rv.C = C.LLVMIsAInvokeInst(
 func (v Value) IsAReturnInst() (rv Value)          { rv.C = C.LLVMIsAReturnInst(v.C); return }
 func (v Value) IsASwitchInst() (rv Value)          { rv.C = C.LLVMIsASwitchInst(v.C); return }
 func (v Value) IsAUnreachableInst() (rv Value)     { rv.C = C.LLVMIsAUnreachableInst(v.C); return }
-func (v Value) IsAUnwindInst() (rv Value)          { rv.C = C.LLVMIsAUnwindInst(v.C); return }
 func (v Value) IsAUnaryInstruction() (rv Value)    { rv.C = C.LLVMIsAUnaryInstruction(v.C); return }
 func (v Value) IsAAllocaInst() (rv Value)          { rv.C = C.LLVMIsAAllocaInst(v.C); return }
 func (v Value) IsACastInst() (rv Value)            { rv.C = C.LLVMIsACastInst(v.C); return }
@@ -743,11 +736,23 @@ func MDString(str string) (v Value) {
 	return
 }
 func (c Context) MDNode(vals []Value) (v Value) {
-	v.C = C.LLVMMDNodeInContext(c.C, llvmValueRefPtr(&vals[0]), C.unsigned(len(vals)))
+    var ptr *C.LLVMValueRef
+    var nvals int
+    if vals != nil {
+        nvals = len(vals)
+        if nvals != 0 {ptr = llvmValueRefPtr(&vals[0])}
+    }
+	v.C = C.LLVMMDNodeInContext(c.C, ptr, C.unsigned(nvals))
 	return
 }
 func MDNode(vals []Value) (v Value) {
-	v.C = C.LLVMMDNode(llvmValueRefPtr(&vals[0]), C.unsigned(len(vals)))
+    var ptr *C.LLVMValueRef
+    var nvals int
+    if vals != nil {
+        nvals = len(vals)
+        if nvals != 0 {ptr = llvmValueRefPtr(&vals[0])}
+    }
+	v.C = C.LLVMMDNode(ptr, C.unsigned(nvals))
 	return
 }
 
@@ -820,6 +825,7 @@ func ConstVector(scalarConstVals []Value, packed bool) (v Value) {
 
 // Constant expressions 
 func (v Value) Opcode() Opcode                { return Opcode(C.LLVMGetConstOpcode(v.C)) }
+func (v Value) InstructionOpcode() Opcode     { return Opcode(C.LLVMGetInstructionOpcode(v.C)) }
 func AlignOf(t Type) (v Value)                { v.C = C.LLVMAlignOf(t.C); return }
 func SizeOf(t Type) (v Value)                 { v.C = C.LLVMSizeOf(t.C); return }
 func ConstNeg(v Value) (rv Value)             { rv.C = C.LLVMConstNeg(v.C); return }
@@ -959,6 +965,7 @@ func (m Module) NamedGlobal(name string) (v Value) {
 	C.free(unsafe.Pointer(cname))
 	return
 }
+
 func (m Module) FirstGlobal() (v Value)   { v.C = C.LLVMGetFirstGlobal(m.C); return }
 func (m Module) LastGlobal() (v Value)    { v.C = C.LLVMGetLastGlobal(m.C); return }
 func NextGlobal(v Value) (rv Value)       { rv.C = C.LLVMGetNextGlobal(v.C); return }
@@ -1175,7 +1182,6 @@ func (b Builder) CreateInvoke(fn Value, args []Value, then, catch BasicBlock, na
 	C.free(unsafe.Pointer(cname))
 	return
 }
-func (b Builder) CreateUnwind() (rv Value)      { rv.C = C.LLVMBuildUnwind(b.C); return }
 func (b Builder) CreateUnreachable() (rv Value) { rv.C = C.LLVMBuildUnreachable(b.C); return }
 
 // Add a case to the switch instruction

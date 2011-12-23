@@ -13,10 +13,11 @@ I'll implement them soon.
 Installation
 ------------
 
-To install, you can pull down the source and run "gomake install".
+To install, run the following (assuming you have curl and Go installed):
+    curl https://github.com/axw/gollvm/blob/master/install.sh | sh
 
-Alternatively, you can use goinstall, but you must then set the CGO_CFLAGS and
-CGO_LDFLAGS environment variables:
+Alternatively, you can use goinstall directly, but you must then set the
+CGO_CFLAGS and CGO_LDFLAGS environment variables:
     $ export CGO_CFLAGS=`llvm-config --cflags`
     $ export CGO_LDFLAGS="`llvm-config --ldflags` -Wl,-L`llvm-config --libdir` -lLLVM-`llvm-config --version`"
     $ goinstall github.com/axw/gollvm/llvm

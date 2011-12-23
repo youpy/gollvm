@@ -32,15 +32,11 @@ const (
 func InitializeMBlazeTargetInfo()     { C.LLVMInitializeMBlazeTargetInfo() }
 func InitializeCppBackendTargetInfo() { C.LLVMInitializeCppBackendTargetInfo() }
 func InitializeCBackendTargetInfo()   { C.LLVMInitializeCBackendTargetInfo() }
-func InitializeBlackfinTargetInfo()   { C.LLVMInitializeBlackfinTargetInfo() }
-func InitializeSystemZTargetInfo()    { C.LLVMInitializeSystemZTargetInfo() }
 func InitializeMSP430TargetInfo()     { C.LLVMInitializeMSP430TargetInfo() }
 func InitializeXCoreTargetInfo()      { C.LLVMInitializeXCoreTargetInfo() }
-func InitializePIC16TargetInfo()      { C.LLVMInitializePIC16TargetInfo() }
 func InitializeCellSPUTargetInfo()    { C.LLVMInitializeCellSPUTargetInfo() }
 func InitializeMipsTargetInfo()       { C.LLVMInitializeMipsTargetInfo() }
 func InitializeARMTargetInfo()        { C.LLVMInitializeARMTargetInfo() }
-func InitializeAlphaTargetInfo()      { C.LLVMInitializeAlphaTargetInfo() }
 func InitializePowerPCTargetInfo()    { C.LLVMInitializePowerPCTargetInfo() }
 func InitializeSparcTargetInfo()      { C.LLVMInitializeSparcTargetInfo() }
 func InitializeX86TargetInfo()        { C.LLVMInitializeX86TargetInfo() }
@@ -52,15 +48,11 @@ func InitializeX86TargetInfo()        { C.LLVMInitializeX86TargetInfo() }
 func InitializeMBlazeTarget()     { C.LLVMInitializeMBlazeTarget() }
 func InitializeCppBackendTarget() { C.LLVMInitializeCppBackendTarget() }
 func InitializeCBackendTarget()   { C.LLVMInitializeCBackendTarget() }
-func InitializeBlackfinTarget()   { C.LLVMInitializeBlackfinTarget() }
-func InitializeSystemZTarget()    { C.LLVMInitializeSystemZTarget() }
 func InitializeMSP430Target()     { C.LLVMInitializeMSP430Target() }
 func InitializeXCoreTarget()      { C.LLVMInitializeXCoreTarget() }
-func InitializePIC16Target()      { C.LLVMInitializePIC16Target() }
 func InitializeCellSPUTarget()    { C.LLVMInitializeCellSPUTarget() }
 func InitializeMipsTarget()       { C.LLVMInitializeMipsTarget() }
 func InitializeARMTarget()        { C.LLVMInitializeARMTarget() }
-func InitializeAlphaTarget()      { C.LLVMInitializeAlphaTarget() }
 func InitializePowerPCTarget()    { C.LLVMInitializePowerPCTarget() }
 func InitializeSparcTarget()      { C.LLVMInitializeSparcTarget() }
 func InitializeX86Target()        { C.LLVMInitializeX86Target() }
@@ -183,14 +175,6 @@ func (td TargetData) ElementContainingOffset(t Type, offset uint64) int {
 // See the method llvm::StructLayout::getElementOffset.
 func (td TargetData) ElementOffset(t Type, element int) uint64 {
 	return uint64(C.LLVMOffsetOfElement(td.C, t.C, C.unsigned(element)))
-}
-
-// Struct layouts are speculatively cached. If a TargetDataRef is alive when
-// types are being refined and removed, this method must be called whenever a
-// struct type is removed to avoid a dangling pointer in this cache.
-// See the method llvm::TargetData::InvalidateStructLayoutInfo.
-func (td TargetData) InvalidateStructLayoutInfo(t Type) {
-	C.LLVMInvalidateStructLayout(td.C, t.C)
 }
 
 // Deallocates a TargetData.
