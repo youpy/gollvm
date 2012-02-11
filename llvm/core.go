@@ -449,7 +449,7 @@ func PPCFP128Type() (t Type) { t.C = C.LLVMPPCFP128Type(); return }
 func FunctionType(returnType Type, paramTypes []Type, isVarArg bool) (t Type) {
 	var pt *C.LLVMTypeRef
 	var ptlen C.unsigned
-	if paramTypes != nil {
+	if len(paramTypes) > 0 {
 		pt = llvmTypeRefPtr(&paramTypes[0])
 		ptlen = C.unsigned(len(paramTypes))
 	}
@@ -737,20 +737,18 @@ func MDString(str string) (v Value) {
 }
 func (c Context) MDNode(vals []Value) (v Value) {
     var ptr *C.LLVMValueRef
-    var nvals int
-    if vals != nil {
-        nvals = len(vals)
-        if nvals != 0 {ptr = llvmValueRefPtr(&vals[0])}
+    nvals := len(vals)
+    if nvals > 0 {
+        ptr = llvmValueRefPtr(&vals[0])
     }
 	v.C = C.LLVMMDNodeInContext(c.C, ptr, C.unsigned(nvals))
 	return
 }
 func MDNode(vals []Value) (v Value) {
     var ptr *C.LLVMValueRef
-    var nvals int
-    if vals != nil {
-        nvals = len(vals)
-        if nvals != 0 {ptr = llvmValueRefPtr(&vals[0])}
+    nvals := len(vals)
+    if nvals > 0 {
+        ptr = llvmValueRefPtr(&vals[0])
     }
 	v.C = C.LLVMMDNode(ptr, C.unsigned(nvals))
 	return
@@ -1595,10 +1593,9 @@ func (b Builder) CreatePHI(t Type, name string) (v Value) {
 func (b Builder) CreateCall(fn Value, args []Value, name string) (v Value) {
 	cname := C.CString(name)
     var arg0 *Value
-    nargs := 0
-    if (args != nil) {
+    nargs := len(args)
+    if nargs > 0 {
         arg0 = &args[0]
-        nargs = len(args)
     }
 	v.C = C.LLVMBuildCall(b.C, fn.C,
 		llvmValueRefPtr(arg0), C.unsigned(nargs), cname)
