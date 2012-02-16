@@ -99,7 +99,6 @@ func (info *DebugInfo) MDNode(d DebugDescriptor) Value {
     // interface. Instead, we must check the innards.
     if d == nil || reflect.ValueOf(d).IsNil() {return Value{nil}}
 
-    println(d)
     if info.cache == nil {info.cache = make(map[DebugDescriptor]Value)}
     value, exists := info.cache[d]
     if !exists {
