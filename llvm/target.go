@@ -6,7 +6,7 @@ package llvm
 */
 import "C"
 import "unsafe"
-import "os"
+import "errors"
 
 type (
 	TargetData struct {
@@ -70,9 +70,9 @@ func InitializeAllTargets() { C.LLVMInitializeAllTargets() }
 // LLVMInitializeNativeTarget - The main program should call this function to
 // initialize the native target corresponding to the host. This is useful
 // for JIT applications to ensure that the target gets linked in correctly.
-var initializeNativeTargetError = os.NewError("Failed to initialize native target")
+var initializeNativeTargetError = errors.New("Failed to initialize native target")
 
-func InitializeNativeTarget() os.Error {
+func InitializeNativeTarget() error {
 	fail := C.LLVMInitializeNativeTarget()
 	if fail == 0 {
 		return nil

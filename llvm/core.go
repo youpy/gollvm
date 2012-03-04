@@ -6,7 +6,7 @@ package llvm
 */
 import "C"
 import "unsafe"
-import "os"
+import "errors"
 
 // TODO: Add comments
 // TODO: Use Go's reflection in order to simplify bindings?
@@ -1685,7 +1685,7 @@ func (mp ModuleProvider) Dispose() { C.LLVMDisposeModuleProvider(mp.C) }
 // llvm.MemoryBuffer
 //-------------------------------------------------------------------------
 
-func NewMemoryBufferFromFile(path string) (b MemoryBuffer, err os.Error) {
+func NewMemoryBufferFromFile(path string) (b MemoryBuffer, err error) {
 	var cmsg *C.char
 	cpath := C.CString(path)
 	fail := C.LLVMCreateMemoryBufferWithContentsOfFile(cpath, &b.C, &cmsg)
@@ -1693,21 +1693,21 @@ func NewMemoryBufferFromFile(path string) (b MemoryBuffer, err os.Error) {
 		err = nil
 	} else {
 		b.C = nil
-		err = os.NewError(C.GoString(cmsg))
+		err = errors.New(C.GoString(cmsg))
 		C.LLVMDisposeMessage(cmsg)
 	}
 	C.free(unsafe.Pointer(cpath))
 	return
 }
 
-func NewMemoryBufferFromStdin() (b MemoryBuffer, err os.Error) {
+func NewMemoryBufferFromStdin() (b MemoryBuffer, err error) {
 	var cmsg *C.char
 	fail := C.LLVMCreateMemoryBufferWithSTDIN(&b.C, &cmsg)
 	if fail == 0 {
 		err = nil
 	} else {
 		b.C = nil
-		err = os.NewError(C.GoString(cmsg))
+		err = errors.New(C.GoString(cmsg))
 		C.LLVMDisposeMessage(cmsg)
 	}
 	return

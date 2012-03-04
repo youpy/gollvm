@@ -5,7 +5,7 @@ package llvm
 #include <stdlib.h>
 */
 import "C"
-import "os"
+import "errors"
 
 type VerifierFailureAction C.LLVMVerifierFailureAction
 
@@ -20,7 +20,7 @@ const (
 
 // Verifies that a module is valid, taking the specified action if not.
 // Optionally returns a human-readable description of any invalid constructs.
-func VerifyModule(m Module, a VerifierFailureAction) os.Error {
+func VerifyModule(m Module, a VerifierFailureAction) error {
 	var cmsg *C.char
 	broken := C.LLVMVerifyModule(m.C, C.LLVMVerifierFailureAction(a), &cmsg)
 
@@ -29,16 +29,16 @@ func VerifyModule(m Module, a VerifierFailureAction) os.Error {
 	if broken == 0 {
 		return nil
 	}
-	err := os.NewError(C.GoString(cmsg))
+	err := errors.New(C.GoString(cmsg))
 	C.LLVMDisposeMessage(cmsg)
 	return err
 }
 
-var verifyFunctionError = os.NewError("Function is broken")
+var verifyFunctionError = errors.New("Function is broken")
 
 // Verifies that a single function is valid, taking the specified action.
 // Useful for debugging.
-func VerifyFunction(f Value, a VerifierFailureAction) os.Error {
+func VerifyFunction(f Value, a VerifierFailureAction) error {
 	broken := C.LLVMVerifyFunction(f.C, C.LLVMVerifierFailureAction(a))
 
 	// C++'s verifyFunction means isFunctionBroken, so it returns false if
