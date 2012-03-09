@@ -499,6 +499,23 @@ func StructType(elementTypes []Type, packed bool) (t Type) {
 	return
 }
 
+func (c Context) StructCreateNamed(name string) (t Type) {
+	cname := C.CString(name)
+    t.C = C.LLVMStructCreateNamed(c.C, cname)
+	C.free(unsafe.Pointer(cname))
+    return
+}
+
+func (t Type) StructSetBody(elementTypes []Type, packed bool) {
+    var pt *C.LLVMTypeRef
+    var ptlen C.unsigned
+    if len(elementTypes) > 0 {
+		pt = llvmTypeRefPtr(&elementTypes[0])
+		ptlen = C.unsigned(len(elementTypes))
+    }
+    C.LLVMStructSetBody(t.C, pt, ptlen, boolToLLVMBool(packed))
+}
+
 func (t Type) IsStructPacked() bool         { return C.LLVMIsPackedStruct(t.C) != 0 }
 func (t Type) StructElementTypesCount() int { return int(C.LLVMCountStructElementTypes(t.C)) }
 func (t Type) StructElementTypes() []Type {
