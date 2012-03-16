@@ -119,7 +119,6 @@ const (
 	Switch      = C.LLVMSwitch
 	IndirectBr  = C.LLVMIndirectBr
 	Invoke      = C.LLVMInvoke
-	Unwind      = C.LLVMUnwind
 	Unreachable = C.LLVMUnreachable
 
 	// Standard Binary Operators
