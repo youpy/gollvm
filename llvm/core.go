@@ -373,9 +373,9 @@ func (m Module) SetInlineAsm(asm string) {
 }
 
 func (m Module) AddNamedMetadataOperand(name string, operand Value) {
-    cname := C.CString(name)
-    C.LLVMAddNamedMetadataOperand(m.C, cname, operand.C)
-    C.free(unsafe.Pointer(cname))
+	cname := C.CString(name)
+	C.LLVMAddNamedMetadataOperand(m.C, cname, operand.C)
+	C.free(unsafe.Pointer(cname))
 }
 
 //-------------------------------------------------------------------------
@@ -463,65 +463,65 @@ func (t Type) IsFunctionVarArg() bool { return C.LLVMIsFunctionVarArg(t.C) != 0 
 func (t Type) ReturnType() (rt Type)  { rt.C = C.LLVMGetReturnType(t.C); return }
 func (t Type) ParamTypesCount() int   { return int(C.LLVMCountParamTypes(t.C)) }
 func (t Type) ParamTypes() []Type {
-    count := t.ParamTypesCount()
-    if count > 0 {
-    	out := make([]Type, count)
-        C.LLVMGetParamTypes(t.C, llvmTypeRefPtr(&out[0]))
-        return out
-    }
+	count := t.ParamTypesCount()
+	if count > 0 {
+		out := make([]Type, count)
+		C.LLVMGetParamTypes(t.C, llvmTypeRefPtr(&out[0]))
+		return out
+	}
 	return nil
 }
 
 // Operations on struct types
 func (c Context) StructType(elementTypes []Type, packed bool) (t Type) {
-    var pt *C.LLVMTypeRef
-    var ptlen C.unsigned
-    if len(elementTypes) > 0 {
+	var pt *C.LLVMTypeRef
+	var ptlen C.unsigned
+	if len(elementTypes) > 0 {
 		pt = llvmTypeRefPtr(&elementTypes[0])
 		ptlen = C.unsigned(len(elementTypes))
-    }
+	}
 	t.C = C.LLVMStructTypeInContext(c.C,
-        pt,
-        ptlen,
+		pt,
+		ptlen,
 		boolToLLVMBool(packed))
 	return
 }
 
 func StructType(elementTypes []Type, packed bool) (t Type) {
-    var pt *C.LLVMTypeRef
-    var ptlen C.unsigned
-    if len(elementTypes) > 0 {
+	var pt *C.LLVMTypeRef
+	var ptlen C.unsigned
+	if len(elementTypes) > 0 {
 		pt = llvmTypeRefPtr(&elementTypes[0])
 		ptlen = C.unsigned(len(elementTypes))
-    }
+	}
 	t.C = C.LLVMStructType(pt, ptlen, boolToLLVMBool(packed))
 	return
 }
 
 func (c Context) StructCreateNamed(name string) (t Type) {
 	cname := C.CString(name)
-    t.C = C.LLVMStructCreateNamed(c.C, cname)
+	t.C = C.LLVMStructCreateNamed(c.C, cname)
 	C.free(unsafe.Pointer(cname))
-    return
+	return
 }
 
 func (t Type) StructSetBody(elementTypes []Type, packed bool) {
-    var pt *C.LLVMTypeRef
-    var ptlen C.unsigned
-    if len(elementTypes) > 0 {
+	var pt *C.LLVMTypeRef
+	var ptlen C.unsigned
+	if len(elementTypes) > 0 {
 		pt = llvmTypeRefPtr(&elementTypes[0])
 		ptlen = C.unsigned(len(elementTypes))
-    }
-    C.LLVMStructSetBody(t.C, pt, ptlen, boolToLLVMBool(packed))
+	}
+	C.LLVMStructSetBody(t.C, pt, ptlen, boolToLLVMBool(packed))
 }
 
 func (t Type) IsStructPacked() bool         { return C.LLVMIsPackedStruct(t.C) != 0 }
 func (t Type) StructElementTypesCount() int { return int(C.LLVMCountStructElementTypes(t.C)) }
 func (t Type) StructElementTypes() []Type {
 	out := make([]Type, t.StructElementTypesCount())
-    if len(out) > 0 {
-    	C.LLVMGetStructElementTypes(t.C, llvmTypeRefPtr(&out[0]))
-    }
+	if len(out) > 0 {
+		C.LLVMGetStructElementTypes(t.C, llvmTypeRefPtr(&out[0]))
+	}
 	return out
 }
 
@@ -545,11 +545,11 @@ func (t Type) PointerAddressSpace() int { return int(C.LLVMGetPointerAddressSpac
 func (t Type) VectorSize() int          { return int(C.LLVMGetVectorSize(t.C)) }
 
 // Operations on other types
-func (c Context) VoidType() (t Type)   { t.C = C.LLVMVoidTypeInContext(c.C); return }
-func (c Context) LabelType() (t Type)  { t.C = C.LLVMLabelTypeInContext(c.C); return }
+func (c Context) VoidType() (t Type)  { t.C = C.LLVMVoidTypeInContext(c.C); return }
+func (c Context) LabelType() (t Type) { t.C = C.LLVMLabelTypeInContext(c.C); return }
 
-func VoidType() (t Type)   { t.C = C.LLVMVoidType(); return }
-func LabelType() (t Type)  { t.C = C.LLVMLabelType(); return }
+func VoidType() (t Type)  { t.C = C.LLVMVoidType(); return }
+func LabelType() (t Type) { t.C = C.LLVMLabelType(); return }
 
 //-------------------------------------------------------------------------
 // llvm.Value
@@ -751,20 +751,20 @@ func MDString(str string) (v Value) {
 	return
 }
 func (c Context) MDNode(vals []Value) (v Value) {
-    var ptr *C.LLVMValueRef
-    nvals := len(vals)
-    if nvals > 0 {
-        ptr = llvmValueRefPtr(&vals[0])
-    }
+	var ptr *C.LLVMValueRef
+	nvals := len(vals)
+	if nvals > 0 {
+		ptr = llvmValueRefPtr(&vals[0])
+	}
 	v.C = C.LLVMMDNodeInContext(c.C, ptr, C.unsigned(nvals))
 	return
 }
 func MDNode(vals []Value) (v Value) {
-    var ptr *C.LLVMValueRef
-    nvals := len(vals)
-    if nvals > 0 {
-        ptr = llvmValueRefPtr(&vals[0])
-    }
+	var ptr *C.LLVMValueRef
+	nvals := len(vals)
+	if nvals > 0 {
+		ptr = llvmValueRefPtr(&vals[0])
+	}
 	v.C = C.LLVMMDNode(ptr, C.unsigned(nvals))
 	return
 }
@@ -932,6 +932,7 @@ func ConstShuffleVector(veca, vecb, mask Value) (rv Value) {
 	rv.C = C.LLVMConstShuffleVector(veca.C, vecb.C, mask.C)
 	return
 }
+
 //TODO
 //LLVMValueRef LLVMConstExtractValue(LLVMValueRef AggConstant, unsigned *IdxList,
 //                                   unsigned NumIdx);
@@ -1607,11 +1608,11 @@ func (b Builder) CreatePHI(t Type, name string) (v Value) {
 }
 func (b Builder) CreateCall(fn Value, args []Value, name string) (v Value) {
 	cname := C.CString(name)
-    var arg0 *Value
-    nargs := len(args)
-    if nargs > 0 {
-        arg0 = &args[0]
-    }
+	var arg0 *Value
+	nargs := len(args)
+	if nargs > 0 {
+		arg0 = &args[0]
+	}
 	v.C = C.LLVMBuildCall(b.C, fn.C,
 		llvmValueRefPtr(arg0), C.unsigned(nargs), cname)
 	C.free(unsafe.Pointer(cname))
@@ -1691,7 +1692,6 @@ func NewModuleProviderForModule(m Module) (mp ModuleProvider) {
 	mp.C = C.LLVMCreateModuleProviderForExistingModule(m.C)
 	return
 }
-
 
 // Destroys the module M.
 func (mp ModuleProvider) Dispose() { C.LLVMDisposeModuleProvider(mp.C) }
