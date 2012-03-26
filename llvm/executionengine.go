@@ -122,8 +122,13 @@ func (ee ExecutionEngine) RunStaticDestructors()  { C.LLVMRunStaticDestructors(e
 //                          const char * const *EnvP);
 
 func (ee ExecutionEngine) RunFunction(f Value, args []GenericValue) (g GenericValue) {
+	nargs := len(args)
+	var argptr *GenericValue
+	if nargs > 0 {
+		argptr = &args[0]
+	}
 	g.C = C.LLVMRunFunction(ee.C, f.C,
-		C.unsigned(len(args)), llvmGenericValueRefPtr(&args[0]))
+		C.unsigned(nargs), llvmGenericValueRefPtr(argptr))
 	return
 }
 
@@ -170,3 +175,5 @@ func (ee ExecutionEngine) AddGlobalMapping(global Value, addr unsafe.Pointer) {
 func (ee ExecutionEngine) PointerToGlobal(global Value) unsafe.Pointer {
 	return C.LLVMGetPointerToGlobal(ee.C, global.C)
 }
+
+// vim: set ft=go:
