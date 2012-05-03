@@ -936,9 +936,17 @@ func ConstShuffleVector(veca, vecb, mask Value) (rv Value) {
 //TODO
 //LLVMValueRef LLVMConstExtractValue(LLVMValueRef AggConstant, unsigned *IdxList,
 //                                   unsigned NumIdx);
-//LLVMValueRef LLVMConstInsertValue(LLVMValueRef AggConstant,
-//                                  LLVMValueRef ElementValueConstant,
-//                                  unsigned *IdxList, unsigned NumIdx);
+
+func ConstInsertValue(agg, val Value, indices []uint32) (rv Value) {
+	n := len(indices)
+	if n == 0 {
+		panic("one or more indices are required")
+	}
+	ptr := (*C.unsigned)(&indices[0])
+	rv.C = C.LLVMConstInsertValue(agg.C, val.C, ptr, C.unsigned(n))
+	return
+}
+
 func BlockAddress(f Value, bb BasicBlock) (v Value) {
 	v.C = C.LLVMBlockAddress(f.C, bb.C)
 	return
@@ -1777,3 +1785,5 @@ func (pm PassManager) FinalizeFunc() bool { return C.LLVMFinalizeFunctionPassMan
 // the module provider.
 // See llvm::PassManagerBase::~PassManagerBase.
 func (pm PassManager) Dispose() { C.LLVMDisposePassManager(pm.C) }
+
+// vim: set ft=go:

@@ -31,7 +31,6 @@ const (
 //#undef LLVM_TARGET  // Explicit undef to make SWIG happier
 func InitializeMBlazeTargetInfo()     { C.LLVMInitializeMBlazeTargetInfo() }
 func InitializeCppBackendTargetInfo() { C.LLVMInitializeCppBackendTargetInfo() }
-func InitializeCBackendTargetInfo()   { C.LLVMInitializeCBackendTargetInfo() }
 func InitializeMSP430TargetInfo()     { C.LLVMInitializeMSP430TargetInfo() }
 func InitializeXCoreTargetInfo()      { C.LLVMInitializeXCoreTargetInfo() }
 func InitializeCellSPUTargetInfo()    { C.LLVMInitializeCellSPUTargetInfo() }
@@ -47,7 +46,6 @@ func InitializeX86TargetInfo()        { C.LLVMInitializeX86TargetInfo() }
 //#undef LLVM_TARGET  // Explicit undef to make SWIG happier
 func InitializeMBlazeTarget()     { C.LLVMInitializeMBlazeTarget() }
 func InitializeCppBackendTarget() { C.LLVMInitializeCppBackendTarget() }
-func InitializeCBackendTarget()   { C.LLVMInitializeCBackendTarget() }
 func InitializeMSP430Target()     { C.LLVMInitializeMSP430Target() }
 func InitializeXCoreTarget()      { C.LLVMInitializeXCoreTarget() }
 func InitializeCellSPUTarget()    { C.LLVMInitializeCellSPUTarget() }
