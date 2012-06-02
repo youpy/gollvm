@@ -2,6 +2,7 @@ package llvm
 
 /*
 #include <llvm-c/Target.h>
+#include <llvm-c/TargetMachine.h>
 #include <stdlib.h>
 */
 import "C"
@@ -15,12 +16,54 @@ type (
 	StructLayout struct {
 		C C.LLVMStructLayoutRef
 	}
-	ByteOrdering C.enum_LLVMByteOrdering
+	Target struct {
+		C C.LLVMTargetRef
+	}
+	TargetMachine struct {
+		C C.LLVMTargetMachineRef
+	}
+	ByteOrdering    C.enum_LLVMByteOrdering
+	RelocMode       C.LLVMRelocMode
+	CodeGenOptLevel C.LLVMCodeGenOptLevel
+	CodeGenFileType C.LLVMCodeGenFileType
+	CodeModel       C.LLVMCodeModel
+)
+
+const (
+	DefaultTargetTriple string = C.LLVM_DEFAULT_TARGET_TRIPLE
 )
 
 const (
 	BigEndian    = C.LLVMBigEndian
 	LittleEndian = C.LLVMLittleEndian
+)
+
+const (
+	RelocDefault      RelocMode = C.LLVMRelocDefault
+	RelocStatic       RelocMode = C.LLVMRelocStatic
+	RelocPIC          RelocMode = C.LLVMRelocPIC
+	RelocDynamicNoPic RelocMode = C.LLVMRelocDynamicNoPic
+)
+
+const (
+	CodeGenLevelNone       CodeGenOptLevel = C.LLVMCodeGenLevelNone
+	CodeGenLevelLess       CodeGenOptLevel = C.LLVMCodeGenLevelLess
+	CodeGenLevelDefault    CodeGenOptLevel = C.LLVMCodeGenLevelDefault
+	CodeGenLevelAggressive CodeGenOptLevel = C.LLVMCodeGenLevelAggressive
+)
+
+const (
+	CodeModelDefault    CodeModel = C.LLVMCodeModelDefault
+	CodeModelJITDefault CodeModel = C.LLVMCodeModelJITDefault
+	CodeModelSmall      CodeModel = C.LLVMCodeModelSmall
+	CodeModelKernel     CodeModel = C.LLVMCodeModelKernel
+	CodeModelMedium     CodeModel = C.LLVMCodeModelMedium
+	CodeModelLarge      CodeModel = C.LLVMCodeModelLarge
+)
+
+const (
+	AssemblyFile CodeGenFileType = C.LLVMAssemblyFile
+	ObjectFile   CodeGenFileType = C.LLVMObjectFile
 )
 
 // Declare all of the target-initialization functions that are available.
@@ -64,6 +107,8 @@ func InitializeAllTargetInfos() { C.LLVMInitializeAllTargetInfos() }
 // wants to link in all available targets that LLVM is configured to
 // support.
 func InitializeAllTargets() { C.LLVMInitializeAllTargets() }
+
+func InitializeAllTargetMCs() { C.LLVMInitializeAllTargetMCs() }
 
 // LLVMInitializeNativeTarget - The main program should call this function to
 // initialize the native target corresponding to the host. This is useful
@@ -178,3 +223,58 @@ func (td TargetData) ElementOffset(t Type, element int) uint64 {
 // Deallocates a TargetData.
 // See the destructor llvm::TargetData::~TargetData.
 func (td TargetData) Dispose() { C.LLVMDisposeTargetData(td.C) }
+
+///////////////////////////////////////////////////////////////////////////////
+// Target
+
+func FirstTarget() Target {
+	return Target{C.LLVMGetFirstTarget()}
+}
+
+func (t Target) NextTarget() Target {
+	return Target{C.LLVMGetNextTarget(t.C)}
+}
+
+func (t Target) Name() string {
+	return C.GoString(C.LLVMGetTargetName(t.C))
+}
+
+func (t Target) Description() string {
+	return C.GoString(C.LLVMGetTargetDescription(t.C))
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// TargetMachine
+
+// CreateTargetMachine creates a new TargetMachine.
+func (t Target) CreateTargetMachine(Triple string, CPU string, Features string,
+	Level CodeGenOptLevel, Reloc RelocMode,
+	CodeModel CodeModel) (tm TargetMachine) {
+	cTriple := C.CString(Triple)
+	cCPU := C.CString(CPU)
+	cFeatures := C.CString(Features)
+	tm.C = C.LLVMCreateTargetMachine(t.C, cTriple, cCPU, cFeatures,
+		C.LLVMCodeGenOptLevel(Level),
+		C.LLVMRelocMode(Reloc),
+		C.LLVMCodeModel(CodeModel))
+	C.free(unsafe.Pointer(cTriple))
+	C.free(unsafe.Pointer(cCPU))
+	C.free(unsafe.Pointer(cFeatures))
+	return
+}
+
+// Triple returns the triple describing the machine (arch-vendor-os).
+func (tm TargetMachine) Triple() string {
+	cstr := C.LLVMGetTargetMachineTriple(tm.C)
+	return C.GoString(cstr)
+}
+
+// TargetData returns the TargetData for the machine.
+func (tm TargetMachine) TargetData() TargetData {
+	return TargetData{C.LLVMGetTargetMachineData(tm.C)}
+}
+
+// Dispose releases resources related to the TargetMachine.
+func (tm TargetMachine) Dispose() {
+	C.LLVMDisposeTargetMachine(tm.C)
+}
