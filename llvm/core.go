@@ -221,7 +221,7 @@ const (
 	CommonLinkage                   = C.LLVMCommonLinkage
 	LinkerPrivateLinkage            = C.LLVMLinkerPrivateLinkage
 	LinkerPrivateWeakLinkage        = C.LLVMLinkerPrivateWeakLinkage
-	LinkerPrivateWeakDefAutoLinkage = C.LLVMLinkerPrivateWeakDefAutoLinkage
+	//LinkerPrivateWeakDefAutoLinkage = C.LLVMLinkerPrivateWeakDefAutoLinkage
 )
 
 //-------------------------------------------------------------------------
