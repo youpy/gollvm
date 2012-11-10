@@ -66,38 +66,6 @@ const (
 	ObjectFile   CodeGenFileType = C.LLVMObjectFile
 )
 
-// Declare all of the target-initialization functions that are available.
-
-//#define LLVM_TARGET(TargetName) \
-//  func Initialize##TargetName##TargetInfo() { C.LLVMInitialize##TargetName##TargetInfo() }
-//#include "llvm/Config/Targets.def"
-//#undef LLVM_TARGET  // Explicit undef to make SWIG happier
-func InitializeMBlazeTargetInfo()     { C.LLVMInitializeMBlazeTargetInfo() }
-func InitializeCppBackendTargetInfo() { C.LLVMInitializeCppBackendTargetInfo() }
-func InitializeMSP430TargetInfo()     { C.LLVMInitializeMSP430TargetInfo() }
-func InitializeXCoreTargetInfo()      { C.LLVMInitializeXCoreTargetInfo() }
-func InitializeCellSPUTargetInfo()    { C.LLVMInitializeCellSPUTargetInfo() }
-func InitializeMipsTargetInfo()       { C.LLVMInitializeMipsTargetInfo() }
-func InitializeARMTargetInfo()        { C.LLVMInitializeARMTargetInfo() }
-func InitializePowerPCTargetInfo()    { C.LLVMInitializePowerPCTargetInfo() }
-func InitializeSparcTargetInfo()      { C.LLVMInitializeSparcTargetInfo() }
-func InitializeX86TargetInfo()        { C.LLVMInitializeX86TargetInfo() }
-
-//#define LLVM_TARGET(TargetName) \
-//  func Initialize##TargetName##Target() { C.LLVMInitialize##TargetName##Target() }
-//#include "llvm/Config/Targets.def"
-//#undef LLVM_TARGET  // Explicit undef to make SWIG happier
-func InitializeMBlazeTarget()     { C.LLVMInitializeMBlazeTarget() }
-func InitializeCppBackendTarget() { C.LLVMInitializeCppBackendTarget() }
-func InitializeMSP430Target()     { C.LLVMInitializeMSP430Target() }
-func InitializeXCoreTarget()      { C.LLVMInitializeXCoreTarget() }
-func InitializeCellSPUTarget()    { C.LLVMInitializeCellSPUTarget() }
-func InitializeMipsTarget()       { C.LLVMInitializeMipsTarget() }
-func InitializeARMTarget()        { C.LLVMInitializeARMTarget() }
-func InitializePowerPCTarget()    { C.LLVMInitializePowerPCTarget() }
-func InitializeSparcTarget()      { C.LLVMInitializeSparcTarget() }
-func InitializeX86Target()        { C.LLVMInitializeX86Target() }
-
 // LLVMInitializeAllTargetInfos - The main program should call this function if
 // it wants access to all available targets that LLVM is configured to
 // support.
