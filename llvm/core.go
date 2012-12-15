@@ -80,6 +80,15 @@ func boolToLLVMBool(b bool) C.LLVMBool {
 	return C.LLVMBool(0)
 }
 
+func llvmValueRefs(values []Value) (*C.LLVMValueRef, C.unsigned) {
+	var pt *C.LLVMValueRef
+	ptlen := C.unsigned(len(values))
+	if ptlen > 0 {
+		pt = llvmValueRefPtr(&values[0])
+	}
+	return pt, ptlen
+}
+
 //-------------------------------------------------------------------------
 // llvm.Attribute
 //-------------------------------------------------------------------------
@@ -754,21 +763,13 @@ func MDString(str string) (v Value) {
 	return
 }
 func (c Context) MDNode(vals []Value) (v Value) {
-	var ptr *C.LLVMValueRef
-	nvals := len(vals)
-	if nvals > 0 {
-		ptr = llvmValueRefPtr(&vals[0])
-	}
-	v.C = C.LLVMMDNodeInContext(c.C, ptr, C.unsigned(nvals))
+	ptr, nvals := llvmValueRefs(vals)
+	v.C = C.LLVMMDNodeInContext(c.C, ptr, nvals)
 	return
 }
 func MDNode(vals []Value) (v Value) {
-	var ptr *C.LLVMValueRef
-	nvals := len(vals)
-	if nvals > 0 {
-		ptr = llvmValueRefPtr(&vals[0])
-	}
-	v.C = C.LLVMMDNode(ptr, C.unsigned(nvals))
+	ptr, nvals := llvmValueRefs(vals)
+	v.C = C.LLVMMDNode(ptr, nvals)
 	return
 }
 
@@ -808,9 +809,8 @@ func (c Context) ConstString(str string, addnull bool) (v Value) {
 	return
 }
 func (c Context) ConstStruct(constVals []Value, packed bool) (v Value) {
-	v.C = C.LLVMConstStructInContext(c.C,
-		llvmValueRefPtr(&constVals[0]),
-		C.unsigned(len(constVals)),
+	ptr, nvals := llvmValueRefs(constVals)
+	v.C = C.LLVMConstStructInContext(c.C, ptr, nvals,
 		boolToLLVMBool(packed))
 	return
 }
@@ -822,20 +822,18 @@ func ConstString(str string, addnull bool) (v Value) {
 	return
 }
 func ConstArray(t Type, constVals []Value) (v Value) {
-	v.C = C.LLVMConstArray(t.C,
-		llvmValueRefPtr(&constVals[0]),
-		C.unsigned(len(constVals)))
+	ptr, nvals := llvmValueRefs(constVals)
+	v.C = C.LLVMConstArray(t.C, ptr, nvals)
 	return
 }
 func ConstStruct(constVals []Value, packed bool) (v Value) {
-	v.C = C.LLVMConstStruct(llvmValueRefPtr(&constVals[0]),
-		C.unsigned(len(constVals)),
-		boolToLLVMBool(packed))
+	ptr, nvals := llvmValueRefs(constVals)
+	v.C = C.LLVMConstStruct(ptr, nvals, boolToLLVMBool(packed))
 	return
 }
 func ConstVector(scalarConstVals []Value, packed bool) (v Value) {
-	v.C = C.LLVMConstVector(llvmValueRefPtr(&scalarConstVals[0]),
-		C.unsigned(len(scalarConstVals)))
+	ptr, nvals := llvmValueRefs(scalarConstVals)
+	v.C = C.LLVMConstVector(ptr, nvals)
 	return
 }
 
@@ -886,13 +884,13 @@ func ConstLShr(lhs, rhs Value) (v Value) { v.C = C.LLVMConstLShr(lhs.C, rhs.C); 
 func ConstAShr(lhs, rhs Value) (v Value) { v.C = C.LLVMConstAShr(lhs.C, rhs.C); return }
 
 func ConstGEP(v Value, indices []Value) (rv Value) {
-	rv.C = C.LLVMConstGEP(v.C,
-		llvmValueRefPtr(&indices[0]), C.unsigned(len(indices)))
+	ptr, nvals := llvmValueRefs(indices)
+	rv.C = C.LLVMConstGEP(v.C, ptr, nvals)
 	return
 }
 func ConstInBoundsGEP(v Value, indices []Value) (rv Value) {
-	rv.C = C.LLVMConstInBoundsGEP(v.C,
-		llvmValueRefPtr(&indices[0]), C.unsigned(len(indices)))
+	ptr, nvals := llvmValueRefs(indices)
+	rv.C = C.LLVMConstInBoundsGEP(v.C, ptr, nvals)
 	return
 }
 func ConstTrunc(v Value, t Type) (rv Value)         { rv.C = C.LLVMConstTrunc(v.C, t.C); return }
@@ -1060,7 +1058,9 @@ func (v Value) RemoveFunctionAttr(a Attribute) { C.LLVMRemoveFunctionAttr(v.C, C
 func (v Value) ParamsCount() int { return int(C.LLVMCountParams(v.C)) }
 func (v Value) Params() []Value {
 	out := make([]Value, v.ParamsCount())
-	C.LLVMGetParams(v.C, llvmValueRefPtr(&out[0]))
+	if len(out) > 0 {
+		C.LLVMGetParams(v.C, llvmValueRefPtr(&out[0]))
+	}
 	return out
 }
 func (v Value) Param(i int) (rv Value)      { rv.C = C.LLVMGetParam(v.C, C.unsigned(i)); return }
@@ -1148,8 +1148,8 @@ func (v Value) SetTailCall(is bool) { C.LLVMSetTailCall(v.C, boolToLLVMBool(is))
 
 // Operations on phi nodes
 func (v Value) AddIncoming(vals []Value, blocks []BasicBlock) {
-	C.LLVMAddIncoming(v.C, llvmValueRefPtr(&vals[0]),
-		llvmBasicBlockRefPtr(&blocks[0]), C.unsigned(len(vals)))
+	ptr, nvals := llvmValueRefs(vals)
+	C.LLVMAddIncoming(v.C, ptr, llvmBasicBlockRefPtr(&blocks[0]), nvals)
 }
 func (v Value) IncomingCount() int { return int(C.LLVMCountIncoming(v.C)) }
 func (v Value) IncomingValue(i int) (rv Value) {
@@ -1194,7 +1194,8 @@ func (b Builder) SetInstDebugLocation(v Value)    { C.LLVMSetCurrentDebugLocatio
 func (b Builder) CreateRetVoid() (rv Value)    { rv.C = C.LLVMBuildRetVoid(b.C); return }
 func (b Builder) CreateRet(v Value) (rv Value) { rv.C = C.LLVMBuildRet(b.C, v.C); return }
 func (b Builder) CreateAggregateRet(vs []Value) (rv Value) {
-	rv.C = C.LLVMBuildAggregateRet(b.C, llvmValueRefPtr(&vs[0]), C.unsigned(len(vs)))
+	ptr, nvals := llvmValueRefs(vs)
+	rv.C = C.LLVMBuildAggregateRet(b.C, ptr, nvals)
 	return
 }
 func (b Builder) CreateBr(bb BasicBlock) (rv Value) { rv.C = C.LLVMBuildBr(b.C, bb.C); return }
@@ -1212,8 +1213,8 @@ func (b Builder) CreateIndirectBr(addr Value, numDests int) (rv Value) {
 }
 func (b Builder) CreateInvoke(fn Value, args []Value, then, catch BasicBlock, name string) (rv Value) {
 	cname := C.CString(name)
-	rv.C = C.LLVMBuildInvoke(b.C, fn.C, llvmValueRefPtr(&args[0]),
-		C.unsigned(len(args)), then.C, catch.C, cname)
+	ptr, nvals := llvmValueRefs(args)
+	rv.C = C.LLVMBuildInvoke(b.C, fn.C, ptr, nvals, then.C, catch.C, cname)
 	C.free(unsafe.Pointer(cname))
 	return
 }
@@ -1455,15 +1456,15 @@ func (b Builder) CreateStore(val Value, p Value) (v Value) {
 }
 func (b Builder) CreateGEP(p Value, indices []Value, name string) (v Value) {
 	cname := C.CString(name)
-	v.C = C.LLVMBuildGEP(b.C, p.C,
-		llvmValueRefPtr(&indices[0]), C.unsigned(len(indices)), cname)
+	ptr, nvals := llvmValueRefs(indices)
+	v.C = C.LLVMBuildGEP(b.C, p.C, ptr, nvals, cname)
 	C.free(unsafe.Pointer(cname))
 	return
 }
 func (b Builder) CreateInBoundsGEP(p Value, indices []Value, name string) (v Value) {
 	cname := C.CString(name)
-	v.C = C.LLVMBuildInBoundsGEP(b.C, p.C,
-		llvmValueRefPtr(&indices[0]), C.unsigned(len(indices)), cname)
+	ptr, nvals := llvmValueRefs(indices)
+	v.C = C.LLVMBuildInBoundsGEP(b.C, p.C, ptr, nvals, cname)
 	C.free(unsafe.Pointer(cname))
 	return
 }
@@ -1629,13 +1630,8 @@ func (b Builder) CreatePHI(t Type, name string) (v Value) {
 }
 func (b Builder) CreateCall(fn Value, args []Value, name string) (v Value) {
 	cname := C.CString(name)
-	var arg0 *Value
-	nargs := len(args)
-	if nargs > 0 {
-		arg0 = &args[0]
-	}
-	v.C = C.LLVMBuildCall(b.C, fn.C,
-		llvmValueRefPtr(arg0), C.unsigned(nargs), cname)
+	ptr, nvals := llvmValueRefs(args)
+	v.C = C.LLVMBuildCall(b.C, fn.C, ptr, nvals, cname)
 	C.free(unsafe.Pointer(cname))
 	return
 }
