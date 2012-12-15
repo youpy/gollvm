@@ -56,6 +56,8 @@ func (t Type) String() string {
 			}
 		}
 		s += ")"
+	case IntegerTypeKind:
+		s += fmt.Sprintf("(%d bits)", t.IntTypeWidth())
 	}
 
 	return s
