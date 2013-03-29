@@ -377,6 +377,22 @@ func (m Module) Dump() {
 	C.LLVMDumpModule(m.C)
 }
 
+func (m Module) PrintToFile(filename string) (err error) {
+	var cmsg *C.char
+
+	cfilename := C.CString(filename)
+	defer C.free(unsafe.Pointer(cfilename))
+
+	result := C.LLVMPrintModuleToFile(m.C, cfilename, &cmsg)
+
+	if result != 0 {
+		err = errors.New(C.GoString(cmsg))
+		C.LLVMDisposeMessage(cmsg)
+	}
+
+	return err
+}
+
 // See Module::setModuleInlineAsm.
 func (m Module) SetInlineAsm(asm string) {
 	casm := C.CString(asm)
