@@ -390,7 +390,7 @@ func (m Module) PrintToFile(filename string) (err error) {
 		C.LLVMDisposeMessage(cmsg)
 	}
 
-	return err
+	return
 }
 
 // See Module::setModuleInlineAsm.
